@@ -2,6 +2,9 @@
 
 interface ImportMetaEnv {
   readonly VITE_CALL_WIDGET_CDN_URL: string;
+  readonly VITE_PUBLIC_API_BASE_URL: string;
+  readonly VITE_PUBLIC_WEB_BASE_URL: string;
+  readonly VITE_JANUS_WS_URL: string;
 }
 
 interface ImportMeta {

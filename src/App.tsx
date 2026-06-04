@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import './App.css';
-import { loaderUrl } from './shared/callWidget';
+import { initWidget, placeCall } from './shared/callWidget';
 import { useCallWidget, type WidgetStatus } from './shared/useCallWidget';
 
 const STATUS_LABELS: Record<WidgetStatus, string> = {
@@ -10,10 +11,41 @@ const STATUS_LABELS: Record<WidgetStatus, string> = {
 };
 
 function App() {
-  const { status, error, version, scriptUrl, events } = useCallWidget();
+  const { status, error, version, events } = useCallWidget();
+  const widgetReady = status === 'connected' || status === 'mounted';
+
+  const [authToken, setAuthToken] = useState('');
+  const [didInit, setDidInit] = useState(false);
+
+  const [apiKey, setApiKey] = useState('');
+  const [extAgentId, setExtAgentId] = useState('');
+  const [extCustomerId, setExtCustomerId] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  const handleInit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (initWidget(authToken)) setDidInit(true);
+  };
+
+  const handleCall = (e: React.FormEvent) => {
+    e.preventDefault();
+    placeCall({
+      apiKey: apiKey.trim(),
+      extAgentId: Number(extAgentId),
+      extCustomerId: Number(extCustomerId),
+      phoneNumber: phoneNumber.trim() || undefined,
+    });
+  };
+
+  const callReady =
+    didInit &&
+    apiKey.trim() !== '' &&
+    extAgentId.trim() !== '' &&
+    extCustomerId.trim() !== '';
 
   return (
     <main className="widget-app">
+      <div className="widget-main">
       <header className="widget-header">
         <h1>Call Widget</h1>
         <span className={`status-badge status-${status}`}>
@@ -34,20 +66,87 @@ function App() {
           <span className="info-value">{version}</span>
         </div>
         <div className="info-cell">
-          <span className="info-label">Mode</span>
-          <span className="info-value">Deferred — awaiting init config</span>
-        </div>
-        <div className="info-cell info-cell--wide">
-          <span className="info-label">Script URL</span>
-          <code className="info-value info-value--mono">{scriptUrl}</code>
-        </div>
-        <div className="info-cell info-cell--wide">
-          <span className="info-label">Loader URL</span>
-          <code className="info-value info-value--mono">{loaderUrl}</code>
+          <span className="info-label">Initialized</span>
+          <span className="info-value">{didInit ? 'Yes' : 'No'}</span>
         </div>
       </section>
 
-      <section className="event-log" aria-label="Event bus log">
+      <form className="panel" onSubmit={handleInit}>
+        <h2>Initialize</h2>
+        <p className="panel-hint">
+          Backend URLs come from env; provide the auth token to initialize.
+        </p>
+
+        <p className="panel-hint">
+          Enter manager's token for default inputs
+        </p>
+
+        <label className="field">
+          <span>Auth token (JWT)</span>
+          <textarea
+            value={authToken}
+            onChange={(e) => setAuthToken(e.target.value)}
+            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
+            rows={2}
+            spellCheck={false}
+          />
+        </label>
+        <button type="submit" disabled={!widgetReady || authToken.trim() === ''}>
+          {didInit ? 'Re-initialize' : 'Initialize'}
+        </button>
+      </form>
+
+      <form className="panel" onSubmit={handleCall}>
+        <h2>Place a call</h2>
+        <div className="field-row">
+          <label className="field">
+            <span>API key</span>
+            <input
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="dialer_api_…"
+              spellCheck={false}
+            />
+          </label>
+          <label className="field">
+            <span>Phone number</span>
+            <input
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+1234567890 (optional)"
+            />
+          </label>
+        </div>
+        <div className="field-row">
+          <label className="field">
+            <span>Ext agent ID</span>
+            <input
+              type="number"
+              value={extAgentId}
+              onChange={(e) => setExtAgentId(e.target.value)}
+              placeholder="456"
+            />
+          </label>
+          <label className="field">
+            <span>Ext customer ID</span>
+            <input
+              type="number"
+              value={extCustomerId}
+              onChange={(e) => setExtCustomerId(e.target.value)}
+              placeholder="123"
+            />
+          </label>
+        </div>
+        <button type="submit" disabled={!callReady}>
+          Call
+        </button>
+        {!didInit && (
+          <p className="panel-hint">Initialize the widget first.</p>
+        )}
+      </form>
+      </div>
+
+      <aside className="event-log" aria-label="Event bus log">
         <div className="event-log-head">
           <h2>Event bus</h2>
           <span className="event-count">{events.length}</span>
@@ -72,14 +171,7 @@ function App() {
             ))}
           </ul>
         )}
-      </section>
-
-      <p className="widget-note">
-        Backend init config (<code>apiBaseUrl</code>, <code>webBaseUrl</code>,{' '}
-        <code>janusWsUrl</code>, <code>authToken</code>) is intentionally deferred
-        for this step — the widget mounts and reports events without making
-        network requests.
-      </p>
+      </aside>
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import type { CallWidgetAPI } from './callWidget.types';
+import type { CallPayload, CallWidgetAPI } from './callWidget.types';
 
 /**
  * Module-level singleton that owns the Call Widget instance.
@@ -132,4 +132,30 @@ export function loadCallWidget(): Promise<CallWidgetAPI> {
     });
 
   return loadPromise;
+}
+
+/** Backend config, sourced from env. `authToken` is supplied at init time. */
+export const widgetConfig = {
+  apiBaseUrl: import.meta.env.VITE_PUBLIC_API_BASE_URL ?? '',
+  webBaseUrl: import.meta.env.VITE_PUBLIC_WEB_BASE_URL ?? '',
+  janusWsUrl: import.meta.env.VITE_JANUS_WS_URL ?? '',
+};
+
+/**
+ * Initialize the widget with the env config + the provided auth token.
+ * Returns false if the widget hasn't loaded yet.
+ */
+export function initWidget(authToken: string): boolean {
+  const widget = getCallWidget();
+  if (!widget) return false;
+  widget.emit('init', { ...widgetConfig, authToken });
+  return true;
+}
+
+/** Start a call flow. Returns false if the widget hasn't loaded yet. */
+export function placeCall(payload: CallPayload): boolean {
+  const widget = getCallWidget();
+  if (!widget) return false;
+  widget.emit('call', payload);
+  return true;
 }
