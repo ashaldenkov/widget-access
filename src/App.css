@@ -125,6 +125,7 @@
   position: sticky;
   top: 32px;
   display: flex;
+  max-height: 791px;
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 12px;
