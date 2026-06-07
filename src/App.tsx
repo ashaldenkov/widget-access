@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { initWidget, placeCall } from './shared/callWidget';
+import { defaultWidgetConfig, initWidget, placeCall } from './shared/callWidget';
 import { useCallWidget, type WidgetStatus } from './shared/useCallWidget';
 
 const STATUS_LABELS: Record<WidgetStatus, string> = {
@@ -12,8 +12,10 @@ const STATUS_LABELS: Record<WidgetStatus, string> = {
 
 function App() {
   const { status, error, version, events } = useCallWidget();
-  const widgetReady = status === 'connected' || status === 'mounted';
 
+  const [apiBaseUrl, setApiBaseUrl] = useState(defaultWidgetConfig.apiBaseUrl);
+  const [webBaseUrl, setWebBaseUrl] = useState(defaultWidgetConfig.webBaseUrl);
+  const [janusWsUrl, setJanusWsUrl] = useState(defaultWidgetConfig.janusWsUrl);
   const [authToken, setAuthToken] = useState('');
   const [didInit, setDidInit] = useState(false);
 
@@ -24,7 +26,13 @@ function App() {
 
   const handleInit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (initWidget(authToken)) setDidInit(true);
+    const ok = initWidget({
+      apiBaseUrl: apiBaseUrl.trim(),
+      webBaseUrl: webBaseUrl.trim(),
+      janusWsUrl: janusWsUrl.trim(),
+      authToken: authToken.trim(),
+    });
+    if (ok) setDidInit(true);
   };
 
   const handleCall = (e: React.FormEvent) => {
@@ -73,25 +81,48 @@ function App() {
 
       <form className="panel" onSubmit={handleInit}>
         <h2>Initialize</h2>
-        <p className="panel-hint">
-          Backend URLs come from env; provide the auth token to initialize.
-        </p>
 
-        <p className="panel-hint">
-          Enter manager's token for default inputs
-        </p>
-
-        <label className="field">
-          <span>Auth token (JWT)</span>
-          <textarea
-            value={authToken}
-            onChange={(e) => setAuthToken(e.target.value)}
-            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
-            rows={2}
-            spellCheck={false}
-          />
-        </label>
-        <button type="submit" disabled={!widgetReady || authToken.trim() === ''}>
+        <div className="field-row">
+          <label className="field">
+            <span>API base URL</span>
+            <input
+              value={apiBaseUrl}
+              onChange={(e) => setApiBaseUrl(e.target.value)}
+              placeholder="https://api.example.com"
+              spellCheck={false}
+            />
+          </label>
+          <label className="field">
+            <span>Web base URL</span>
+            <input
+              value={webBaseUrl}
+              onChange={(e) => setWebBaseUrl(e.target.value)}
+              placeholder="https://app.example.com"
+              spellCheck={false}
+            />
+          </label>
+        </div>
+        <div className="field-row">
+          <label className="field">
+            <span>Janus WS URL</span>
+            <input
+              value={janusWsUrl}
+              onChange={(e) => setJanusWsUrl(e.target.value)}
+              placeholder="wss://webrtc.example.com/ws"
+              spellCheck={false}
+            />
+          </label>
+          <label className="field">
+            <span>Auth token (JWT)</span>
+            <input
+              value={authToken}
+              onChange={(e) => setAuthToken(e.target.value)}
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
+              spellCheck={false}
+            />
+          </label>
+        </div>
+        <button type="submit">
           {didInit ? 'Re-initialize' : 'Initialize'}
         </button>
       </form>

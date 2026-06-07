@@ -1,4 +1,8 @@
-import type { CallPayload, CallWidgetAPI } from './callWidget.types';
+import type {
+  CallPayload,
+  CallWidgetAPI,
+  CallWidgetConfig,
+} from './callWidget.types';
 
 /**
  * Module-level singleton that owns the Call Widget instance.
@@ -134,21 +138,26 @@ export function loadCallWidget(): Promise<CallWidgetAPI> {
   return loadPromise;
 }
 
-/** Backend config, sourced from env. `authToken` is supplied at init time. */
-export const widgetConfig = {
+/**
+ * Default backend config from env. Used to pre-fill the UI inputs; the values
+ * actually sent at init time come from those (editable) inputs, so a static
+ * gh-pages build can be re-pointed without re-publishing.
+ */
+export const defaultWidgetConfig: CallWidgetConfig = {
   apiBaseUrl: import.meta.env.VITE_PUBLIC_API_BASE_URL ?? '',
   webBaseUrl: import.meta.env.VITE_PUBLIC_WEB_BASE_URL ?? '',
   janusWsUrl: import.meta.env.VITE_JANUS_WS_URL ?? '',
+  authToken: '',
 };
 
 /**
- * Initialize the widget with the env config + the provided auth token.
+ * Initialize the widget with the provided config.
  * Returns false if the widget hasn't loaded yet.
  */
-export function initWidget(authToken: string): boolean {
+export function initWidget(config: CallWidgetConfig): boolean {
   const widget = getCallWidget();
   if (!widget) return false;
-  widget.emit('init', { ...widgetConfig, authToken });
+  widget.emit('init', config);
   return true;
 }
 
