@@ -63,11 +63,10 @@ export const isWidgetInitialized = (): boolean => initialized;
 /**
  * Display version derived from the configured `scriptUrl`:
  * `latest` for the rolling build, or the `<hash>` segment for a pinned
- * `/v/<hash>/` URL. Falls back to an instance-provided `version` if present.
+ * `/v/<hash>/` URL.
  */
 export function getWidgetVersion(): string {
   if (capturedVersion) return capturedVersion;
-  if (instance?.version) return instance.version;
   const pinned = scriptUrl.match(/\/v\/([^/]+)\//);
   if (pinned) return pinned[1];
   if (scriptUrl.includes('/latest/')) return 'latest';
@@ -147,7 +146,6 @@ export const defaultWidgetConfig: CallWidgetConfig = {
   apiBaseUrl: import.meta.env.VITE_PUBLIC_API_BASE_URL ?? '',
   webBaseUrl: import.meta.env.VITE_PUBLIC_WEB_BASE_URL ?? '',
   janusWsUrl: import.meta.env.VITE_JANUS_WS_URL ?? '',
-  authToken: '',
 };
 
 /**
@@ -166,5 +164,13 @@ export function placeCall(payload: CallPayload): boolean {
   const widget = getCallWidget();
   if (!widget) return false;
   widget.emit('call', payload);
+  return true;
+}
+
+/** Hang up any active call and return the widget to idle. Returns false if not loaded. */
+export function dismissWidget(): boolean {
+  const widget = getCallWidget();
+  if (!widget) return false;
+  widget.emit('dismiss');
   return true;
 }

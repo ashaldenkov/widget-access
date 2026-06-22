@@ -2,7 +2,6 @@ export interface CallWidgetConfig {
   apiBaseUrl: string;
   webBaseUrl: string;
   janusWsUrl: string;
-  authToken: string;
 }
 
 export interface CallPayload {
@@ -18,13 +17,9 @@ export interface CallStateChangePayload {
 }
 
 export interface CallWidgetAPI {
-  /** Optional, undocumented: some builds expose a version on the instance. */
-  version?: string;
-
   emit(event: 'init', payload: CallWidgetConfig): void;
   emit(event: 'call', payload: CallPayload): void;
   emit(event: 'dismiss'): void;
-  emit(event: 'update_token', payload: { token: string }): void;
 
   on(event: 'initialized', handler: () => void): void;
   on(event: 'widget_opened', handler: () => void): void;
@@ -54,7 +49,6 @@ export interface CallWidgetAPI {
     handler: (payload: { clientId: number }) => void,
   ): void;
   on(event: 'error', handler: (payload: { message: string }) => void): void;
-  on(event: 'unauthorized', handler: () => void): void;
 
   off(event: string, handler: (...args: never[]) => void): void;
 }
@@ -67,6 +61,5 @@ declare global {
         config?: CallWidgetConfig;
       }): Promise<CallWidgetAPI>;
     };
-    CallWidget?: CallWidgetAPI;
   }
 }

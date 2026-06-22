@@ -30,7 +30,6 @@ const OUTBOUND_EVENTS = [
   'status_confirmed',
   'status_change_skipped',
   'error',
-  'unauthorized',
 ] as const;
 
 export interface UseCallWidgetResult {

@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import './App.css';
-import { defaultWidgetConfig, initWidget, placeCall } from './shared/callWidget';
+import {
+  defaultWidgetConfig,
+  dismissWidget,
+  initWidget,
+  placeCall,
+} from './shared/callWidget';
 import { useCallWidget, type WidgetStatus } from './shared/useCallWidget';
 
 const STATUS_LABELS: Record<WidgetStatus, string> = {
@@ -16,7 +21,6 @@ function App() {
   const [apiBaseUrl, setApiBaseUrl] = useState(defaultWidgetConfig.apiBaseUrl);
   const [webBaseUrl, setWebBaseUrl] = useState(defaultWidgetConfig.webBaseUrl);
   const [janusWsUrl, setJanusWsUrl] = useState(defaultWidgetConfig.janusWsUrl);
-  const [authToken, setAuthToken] = useState('');
   const [didInit, setDidInit] = useState(false);
 
   const [apiKey, setApiKey] = useState('');
@@ -30,9 +34,12 @@ function App() {
       apiBaseUrl: apiBaseUrl.trim(),
       webBaseUrl: webBaseUrl.trim(),
       janusWsUrl: janusWsUrl.trim(),
-      authToken: authToken.trim(),
     });
     if (ok) setDidInit(true);
+  };
+
+  const handleDismiss = () => {
+    dismissWidget();
   };
 
   const handleCall = (e: React.FormEvent) => {
@@ -112,15 +119,6 @@ function App() {
               spellCheck={false}
             />
           </label>
-          <label className="field">
-            <span>Auth token (JWT)</span>
-            <input
-              value={authToken}
-              onChange={(e) => setAuthToken(e.target.value)}
-              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
-              spellCheck={false}
-            />
-          </label>
         </div>
         <button type="submit">
           {didInit ? 'Re-initialize' : 'Initialize'}
@@ -168,12 +166,30 @@ function App() {
             />
           </label>
         </div>
-        <button type="submit" disabled={!callReady}>
-          Call
-        </button>
-        {!didInit && (
-          <p className="panel-hint">Initialize the widget first.</p>
-        )}
+        <div className="button-row">
+          <div className="call-group">
+            <button type="submit" disabled={!callReady}>
+              Call
+            </button>
+            {!didInit && (
+              <span className="panel-hint">Initialize the widget first.</span>
+            )}
+          </div>
+          <div className="dismiss-group">
+            <button
+              type="button"
+              className="button-danger"
+              onClick={handleDismiss}
+              disabled={status === 'loading' || status === 'error'}
+            >
+              Dismiss
+            </button>
+            <span className="dismiss-hint">
+              Tears down the widget and interrupts any active call — host calls this
+              on user logout.
+            </span>
+          </div>
+        </div>
       </form>
       </div>
 
